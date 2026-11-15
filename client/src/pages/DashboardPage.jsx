@@ -20,7 +20,7 @@ const C3 = 'var(--series-3)';
 function tickFormatter(range) {
   return (t) => {
     const d = new Date(t);
-    if (range === '24h') return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (range === '24h') return d.toLocaleTimeString([], { hour: 'numeric' });
     if (range === '7d') return `${d.toLocaleDateString([], { weekday: 'short' })} ${String(d.getHours()).padStart(2, '0')}h`;
     return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
   };
@@ -106,17 +106,17 @@ export default function DashboardPage() {
   const labelFmt = useMemo(() => labelFormatter(range, data?.bucketSize ?? 0), [range, data?.bucketSize]);
   const k = data?.kpis;
   const hasHistory = data && (k.totalTokens > 0 || k.waitingNow > 0);
-  const tickInterval = range === '24h' ? 3 : range === '7d' ? 3 : 4;
 
   return (
     <div className="page">
       <header className="page-head">
         <div>
+          <span className="eyebrow-sm">Analytics</span>
           <h1>Dashboard</h1>
           <p className="muted">Wait times, throughput and queue-length trends.</p>
         </div>
         <div className="filters">
-          <select value={queueId} onChange={(e) => setParam('queueId', e.target.value)} aria-label="Queue">
+          <select name="queue" value={queueId} onChange={(e) => setParam('queueId', e.target.value)} aria-label="Queue">
             <option value="">All queues</option>
             {queues.map((q) => (
               <option key={q.id} value={q.id}>{q.name}</option>
@@ -136,7 +136,7 @@ export default function DashboardPage() {
             ))}
           </div>
           <button className="icon-btn" onClick={load} title="Refresh" aria-label="Refresh" disabled={loading}>
-            <RefreshCw size={16} className={loading ? 'spin' : ''} />
+            <RefreshCw size={16} className={loading ? 'spin' : ''} aria-hidden="true" />
           </button>
         </div>
       </header>
@@ -152,35 +152,35 @@ export default function DashboardPage() {
       {data && (
         <>
           <div className="kpi-grid">
-            <Kpi icon={Clock} label="Average wait" value={duration(k.avgWaitMs)} sub={`Median ${duration(k.medianWaitMs)} · P90 ${duration(k.p90WaitMs)}`} />
-            <Kpi icon={Timer} label="Average service time" value={duration(k.avgServiceMs)} sub="From call to completion" />
-            <Kpi icon={Users} label="Waiting now" value={k.waitingNow} sub={k.longestWaitNowMs != null ? `Longest ${duration(k.longestWaitNowMs)}` : 'Nobody waiting'} />
-            <Kpi icon={TrendingUp} label="Peak queue length" value={k.peakLength} sub={k.peakAt ? `Around ${labelFmt(k.peakAt)}` : 'No activity'} />
-            <Kpi icon={Ticket} label="Tokens issued" value={k.totalTokens} sub={`In the last ${RANGES.find((r) => r.key === range).label}`} />
-            <Kpi icon={CheckCircle2} label="Served" value={k.served} sub={`${k.servingNow} in service now`} />
-            <Kpi icon={XCircle} label="Cancelled" value={k.cancelled} sub={k.cancellationRate == null ? '—' : `${Math.round(k.cancellationRate * 100)}% of tokens issued`} />
-            <Kpi icon={Hourglass} label="Completion rate" value={k.served + k.cancelled ? `${Math.round((k.served / (k.served + k.cancelled)) * 100)}%` : '—'} sub="Of finished tokens, share served" />
+            <Kpi tone="violet" featured icon={Clock} label="Average wait" value={duration(k.avgWaitMs)} sub={`Median ${duration(k.medianWaitMs)} · P90 ${duration(k.p90WaitMs)}`} />
+            <Kpi tone="blue" icon={Timer} label="Average service time" value={duration(k.avgServiceMs)} sub="From call to completion" />
+            <Kpi tone="amber" icon={Users} label="Waiting now" value={k.waitingNow} sub={k.longestWaitNowMs != null ? `Longest ${duration(k.longestWaitNowMs)}` : 'Nobody waiting'} />
+            <Kpi tone="orange" icon={TrendingUp} label="Peak queue length" value={k.peakLength} sub={k.peakAt ? `Around ${tickFmt(k.peakAt)}` : 'No activity'} />
+            <Kpi tone="violet" icon={Ticket} label="Tokens issued" value={k.totalTokens} sub={`In the last ${RANGES.find((r) => r.key === range).label}`} />
+            <Kpi tone="green" icon={CheckCircle2} label="Served" value={k.served} sub={`${k.servingNow} in service now`} />
+            <Kpi tone="red" icon={XCircle} label="Cancelled" value={k.cancelled} sub={k.cancellationRate == null ? '—' : `${Math.round(k.cancellationRate * 100)}% of tokens issued`} />
+            <Kpi tone="green" icon={Hourglass} label="Completion rate" value={k.served + k.cancelled ? `${Math.round((k.served / (k.served + k.cancelled)) * 100)}%` : '—'} sub="Of finished tokens, share served" />
           </div>
 
           {!hasHistory ? (
             <div className="empty">
-              <h3>No activity in this period</h3>
+              <h2>No activity in this period</h2>
               <p className="muted">Issue and serve some tokens and the charts will fill in.</p>
-              <Link to="/queues" className="btn btn-primary">Go to queues</Link>
+              <Link to="/queues" className="btn btn-primary">Go to Queues</Link>
             </div>
           ) : (
             <div className="chart-grid">
-              <ChartCard title="Queue length over time" subtitle="Average and peak number of people waiting" wide>
+              <ChartCard title="Queue Length Over Time" subtitle="Average and peak number of people waiting" wide summary={`Peak queue length was ${k.peakLength} people${k.peakAt ? ` around ${labelFmt(k.peakAt)}` : ''}.`}>
                 <ResponsiveContainer width="100%" height={280}>
                   <AreaChart data={data.series} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                     <defs>
                       <linearGradient id="lenFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={C1} stopOpacity={0.28} />
+                        <stop offset="0%" stopColor={C1} stopOpacity={0.32} />
                         <stop offset="100%" stopColor={C1} stopOpacity={0.02} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid vertical={false} stroke="var(--grid)" />
-                    <XAxis dataKey="t" tickFormatter={tickFmt} interval={tickInterval} {...axisProps} />
+                    <XAxis dataKey="t" tickFormatter={tickFmt} interval="preserveStartEnd" minTickGap={28} {...axisProps} />
                     <YAxis allowDecimals={false} {...axisProps} />
                     <Tooltip content={<ChartTooltip labelFmt={labelFmt} />} cursor={{ stroke: 'var(--border-strong)' }} />
                     <Legend iconType="plainline" wrapperStyle={{ fontSize: 13 }} />
@@ -190,11 +190,11 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               </ChartCard>
 
-              <ChartCard title="Average wait time" subtitle="Minutes from joining to being called, by call time">
+              <ChartCard title="Average Wait Time" subtitle="Minutes from joining to being called, by call time">
                 <ResponsiveContainer width="100%" height={240}>
                   <LineChart data={data.series} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                     <CartesianGrid vertical={false} stroke="var(--grid)" />
-                    <XAxis dataKey="t" tickFormatter={tickFmt} interval={tickInterval} {...axisProps} />
+                    <XAxis dataKey="t" tickFormatter={tickFmt} interval="preserveStartEnd" minTickGap={28} {...axisProps} />
                     <YAxis {...axisProps} />
                     <Tooltip content={<ChartTooltip labelFmt={labelFmt} unit=" min" />} cursor={{ stroke: 'var(--border-strong)' }} />
                     <Line type="monotone" dataKey="avgWaitMin" name="Avg wait" stroke={C1} strokeWidth={2} dot={false} activeDot={{ r: 4 }} connectNulls />
@@ -202,11 +202,11 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               </ChartCard>
 
-              <ChartCard title="Arrivals vs. served" subtitle="Tokens issued and completed per period">
+              <ChartCard title="Arrivals vs. Served" subtitle="Tokens issued and completed per period">
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={data.series} margin={{ top: 8, right: 8, left: -16, bottom: 0 }} barGap={2}>
                     <CartesianGrid vertical={false} stroke="var(--grid)" />
-                    <XAxis dataKey="t" tickFormatter={tickFmt} interval={tickInterval} {...axisProps} />
+                    <XAxis dataKey="t" tickFormatter={tickFmt} interval="preserveStartEnd" minTickGap={28} {...axisProps} />
                     <YAxis allowDecimals={false} {...axisProps} />
                     <Tooltip content={<ChartTooltip labelFmt={labelFmt} />} cursor={{ fill: 'var(--hover)' }} />
                     <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 13 }} />
@@ -216,7 +216,7 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               </ChartCard>
 
-              <ChartCard title="Wait time distribution" subtitle="How long people waited before being called">
+              <ChartCard title="Wait Time Distribution" subtitle="How long people waited before being called">
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={data.distribution} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                     <CartesianGrid vertical={false} stroke="var(--grid)" />
@@ -228,7 +228,7 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               </ChartCard>
 
-              <ChartCard title="By queue" subtitle="Performance of each queue in this period">
+              <ChartCard title="By Queue" subtitle="Performance of each queue in this period">
                 <div className="table-wrap">
                   <table className="table">
                     <thead>
@@ -264,12 +264,12 @@ export default function DashboardPage() {
   );
 }
 
-function Kpi({ icon: Icon, label, value, sub }) {
+function Kpi({ icon: Icon, label, value, sub, tone, featured }) {
   return (
-    <div className="card kpi">
+    <div className={`card kpi tone-${tone} ${featured ? 'kpi-featured' : ''}`}>
       <div className="kpi-head">
         <span>{label}</span>
-        <Icon size={16} />
+        <span className="kpi-icon"><Icon size={16} aria-hidden="true" /></span>
       </div>
       <div className="kpi-value">{value}</div>
       <div className="kpi-sub">{sub}</div>
@@ -277,11 +277,12 @@ function Kpi({ icon: Icon, label, value, sub }) {
   );
 }
 
-function ChartCard({ title, subtitle, children, wide }) {
+function ChartCard({ title, subtitle, children, wide, summary }) {
   return (
     <section className={`card chart-card ${wide ? 'wide' : ''}`}>
       <h2 className="card-title">{title}</h2>
       <p className="muted small">{subtitle}</p>
+      {summary && <p className="sr-only">{summary}</p>}
       <div className="chart-body">{children}</div>
     </section>
   );

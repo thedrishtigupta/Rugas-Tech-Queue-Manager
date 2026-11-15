@@ -93,10 +93,10 @@ export function ToastProvider({ children }) {
       <div className="toasts" role="status" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={`toast toast-${t.type}`}>
-            {t.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+            {t.type === 'error' ? <AlertCircle size={18} aria-hidden="true" /> : <CheckCircle2 size={18} aria-hidden="true" />}
             <span>{t.message}</span>
             <button className="icon-btn ghost" onClick={() => dismiss(t.id)} aria-label="Dismiss">
-              <X size={16} />
+              <X size={16} aria-hidden="true" />
             </button>
           </div>
         ))}

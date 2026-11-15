@@ -1,4 +1,4 @@
-# QueueFlow — Queue Management App
+# QueueFlow: Queue Management App
 
 A full-stack queue manager. A manager logs in, creates queues, issues tokens to people, reorders them, calls the person at the top with one click, cancels tokens, and watches wait-time and queue-length analytics on a dashboard.
 
@@ -25,6 +25,13 @@ Other details:
 - The client refreshes every 5 s, timers tick every second, and late responses can't overwrite newer data.
 - Light, dark and system themes. The layout works on phones.
 - On first start, the app creates a demo account with a week of simulated history so the dashboard has data to show.
+
+## Design
+
+- Purple brand theme with light and dark modes. The brand colors are the `--brand-*` variables at the top of `client/src/styles.css`; change those to retheme.
+- Plus Jakarta Sans for all text, Lucide icons.
+- The chart palette (purple, orange, aqua) was checked for colorblind-safe contrast in both themes.
+- The UI follows the [Vercel Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines). It has visible focus rings, a skip link, labelled icon buttons, inline form errors, reduced-motion support, mobile safe areas and a bottom tab bar on phones.
 
 ## Quick start
 

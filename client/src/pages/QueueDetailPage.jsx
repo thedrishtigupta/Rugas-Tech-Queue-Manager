@@ -74,7 +74,7 @@ export default function QueueDetailPage() {
   async function addToken(e) {
     e.preventDefault();
     if (!form.personName.trim()) {
-      setFormError('Enter a name');
+      setFormError('Enter the person’s name to issue a token.');
       nameInput.current?.focus();
       return;
     }
@@ -98,7 +98,7 @@ export default function QueueDetailPage() {
       <div className="page">
         <div className="empty">
           <h3>{loadError}</h3>
-          <Link className="btn btn-secondary" to="/queues"><ArrowLeft size={16} /> Back to queues</Link>
+          <Link className="btn btn-secondary" to="/queues"><ArrowLeft size={16} aria-hidden="true" /> Back to Queues</Link>
         </div>
       </div>
     );
@@ -124,7 +124,7 @@ export default function QueueDetailPage() {
     <div className="page">
       <header className="page-head">
         <div className="min-w-0">
-          <Link to="/queues" className="back-link"><ArrowLeft size={16} /> All queues</Link>
+          <Link to="/queues" className="back-link"><ArrowLeft size={16} aria-hidden="true" /> All Queues</Link>
           <div className="title-row">
             <h1 className="truncate">{queue.name}</h1>
             <button className="icon-btn ghost" onClick={() => setRenaming(true)} title="Rename queue" aria-label="Rename queue">
@@ -134,7 +134,7 @@ export default function QueueDetailPage() {
         </div>
         <div className="head-actions">
           <Link className="btn btn-secondary" to={`/dashboard?queueId=${queue.id}`}>
-            <BarChart3 size={16} /> Analytics
+            <BarChart3 size={16} aria-hidden="true" /> Analytics
           </Link>
           <button
             className="btn btn-ghost-danger"
@@ -142,7 +142,7 @@ export default function QueueDetailPage() {
               setConfirm({
                 title: 'Delete this queue?',
                 message: `“${queue.name}” and all of its tokens and history will be permanently removed.`,
-                confirmLabel: 'Delete queue',
+                confirmLabel: 'Delete Queue',
                 run: async () => {
                   const ok = await act('delete', '', { method: 'DELETE' });
                   if (ok) {
@@ -153,7 +153,7 @@ export default function QueueDetailPage() {
               })
             }
           >
-            <Trash2 size={16} /> Delete
+            <Trash2 size={16} aria-hidden="true" /> Delete Queue
           </button>
         </div>
       </header>
@@ -161,19 +161,20 @@ export default function QueueDetailPage() {
       {loadError && <div className="alert">Connection problem: {loadError}. Retrying…</div>}
 
       <div className="stat-strip">
-        <Stat icon={Users} label="Waiting" value={waiting.length} />
-        <Stat icon={Check} label="Served today" value={stats.servedToday} />
-        <Stat icon={X} label="Cancelled today" value={stats.cancelledToday} />
-        <Stat icon={Clock} label="Avg wait today" value={duration(stats.avgWaitMs)} />
+        <Stat icon={Users} tone="violet" label="Waiting now" value={waiting.length} />
+        <Stat icon={Check} tone="green" label="Served today" value={stats.servedToday} />
+        <Stat icon={X} tone="red" label="Cancelled today" value={stats.cancelledToday} />
+        <Stat icon={Clock} tone="amber" label="Avg wait today" value={duration(stats.avgWaitMs)} />
       </div>
 
       <div className="detail-grid">
         {/* ---------------- Left column: now serving + add token ---------------- */}
         <div className="stack">
-          <section className={`card serving-card ${serving ? 'is-active' : ''}`}>
+          <section className={`serving-card ${serving ? 'is-active' : ''}`} aria-live="polite">
+            <div className="serving-rings" aria-hidden="true" />
             <div className="serving-head">
               <span className="label">Now serving</span>
-              {serving && <span className="live"><span className="pulse" /> Live</span>}
+              {serving && <span className="live"><span className="pulse" aria-hidden="true" /> Live</span>}
             </div>
             {serving ? (
               <>
@@ -186,52 +187,63 @@ export default function QueueDetailPage() {
               </>
             ) : (
               <div className="serving-empty">
-                <BellRing size={28} />
+                <BellRing size={30} aria-hidden="true" />
                 <p>{waiting.length ? 'Ready to call the next person.' : 'Nobody waiting right now.'}</p>
               </div>
             )}
 
-            <button className="btn btn-primary btn-lg btn-block" onClick={callNext} disabled={!next || !!busy}>
-              <BellRing size={18} />
-              {busy === 'next' ? 'Calling…' : next ? `Call next · ${tokenLabel(next.number)} ${next.personName}` : 'Queue is empty'}
+            <button className="btn btn-light btn-lg btn-block" onClick={callNext} disabled={!next || !!busy}>
+              {busy === 'next' ? <span className="btn-spinner" aria-hidden="true" /> : <BellRing size={18} aria-hidden="true" />}
+              <span className="truncate">{busy === 'next' ? 'Calling…' : next ? `Call Next · ${tokenLabel(next.number)} ${next.personName}` : 'Queue Is Empty'}</span>
             </button>
             {serving && (
               <button
-                className="btn btn-secondary btn-block"
+                className="btn btn-glass btn-block"
                 onClick={() => act('complete', '/complete', { success: `${tokenLabel(serving.number)} marked as served` })}
                 disabled={!!busy}
               >
-                <Check size={16} /> Finish without calling next
+                <Check size={16} aria-hidden="true" /> Finish Without Calling Next
               </button>
             )}
           </section>
 
           <section className="card">
-            <h2 className="card-title"><UserPlus size={18} /> Add to queue</h2>
+            <h2 className="card-title"><span className="title-icon"><UserPlus size={16} aria-hidden="true" /></span> Add to Queue</h2>
             <form onSubmit={addToken} className="stack" noValidate>
               <label className="field">
                 <span>Name</span>
                 <input
                   ref={nameInput}
                   value={form.personName}
-                  onChange={(e) => setForm((f) => ({ ...f, personName: e.target.value }))}
-                  placeholder="Person’s name"
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, personName: e.target.value }));
+                    if (formError) setFormError('');
+                  }}
+                  name="personName"
+                  placeholder="e.g. Rahul Sharma…"
+                  autoComplete="off"
                   maxLength={80}
+                  aria-invalid={!!formError}
+                  aria-describedby={formError ? 'person-error' : undefined}
                 />
+                {formError && <small id="person-error" className="field-error" role="alert">{formError}</small>}
               </label>
               <label className="field">
                 <span>Phone <em className="muted">(optional)</em></span>
                 <input
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  placeholder="+91 98765 43210"
+                  name="phone"
+                  type="tel"
+                  placeholder="e.g. +91 98765 43210…"
+                  autoComplete="off"
                   inputMode="tel"
                   maxLength={20}
                 />
               </label>
-              {formError && <div className="alert">{formError}</div>}
               <button className="btn btn-primary btn-block" disabled={!!busy}>
-                <UserPlus size={16} /> {busy === 'add' ? 'Adding…' : 'Issue token'}
+                {busy === 'add' ? <span className="btn-spinner" aria-hidden="true" /> : <UserPlus size={16} aria-hidden="true" />}
+                {busy === 'add' ? 'Issuing…' : 'Issue Token'}
               </button>
             </form>
           </section>
@@ -241,13 +253,14 @@ export default function QueueDetailPage() {
         <div className="stack">
           <section className="card card-flush">
             <div className="list-head">
-              <h2 className="card-title"><Users size={18} /> Waiting <span className="count">{waiting.length}</span></h2>
+              <h2 className="card-title"><span className="title-icon"><Users size={16} aria-hidden="true" /></span> Waiting <span className="count">{waiting.length}</span></h2>
               <span className="muted small">Est. {duration(avgService)} per person</span>
             </div>
 
             {waiting.length === 0 ? (
               <div className="empty small-empty">
-                <p className="muted">The queue is empty. Add someone using the form.</p>
+                <span className="empty-icon sm"><Users size={20} aria-hidden="true" /></span>
+                <p className="muted">Nobody is waiting. Add someone with the form to issue a token.</p>
               </div>
             ) : (
               <ol className="token-list">
@@ -263,7 +276,11 @@ export default function QueueDetailPage() {
                       </div>
                       <div className="token-meta">
                         <span title={`Joined at ${clock(t.createdAt)}`}><Clock size={13} /> Waiting {duration(now - t.createdAt)}</span>
-                        <span>ETA ~{duration(remainingCurrent + i * avgService)}</span>
+                        <span>
+                          {remainingCurrent + i * avgService < 60000
+                            ? 'Up next'
+                            : `ETA ~${duration(remainingCurrent + i * avgService)}`}
+                        </span>
                         {t.phone && <span className="hide-sm"><Phone size={13} /> {t.phone}</span>}
                       </div>
                     </div>
@@ -295,7 +312,7 @@ export default function QueueDetailPage() {
                           setConfirm({
                             title: `Cancel ${tokenLabel(t.number)}?`,
                             message: `${t.personName} will be removed from the queue. This can’t be undone.`,
-                            confirmLabel: 'Cancel token',
+                            confirmLabel: 'Cancel Token',
                             run: () => act(`cancel-${t.id}`, `/tokens/${t.id}/cancel`, { success: `${tokenLabel(t.number)} cancelled` }),
                           })
                         }
@@ -311,7 +328,7 @@ export default function QueueDetailPage() {
 
           <section className="card card-flush">
             <div className="list-head">
-              <h2 className="card-title"><History size={18} /> Recent activity</h2>
+              <h2 className="card-title"><span className="title-icon"><History size={16} aria-hidden="true" /></span> Recent Activity</h2>
             </div>
             {history.length === 0 ? (
               <div className="empty small-empty"><p className="muted">Served and cancelled tokens will appear here.</p></div>
@@ -365,10 +382,10 @@ export default function QueueDetailPage() {
   );
 }
 
-function Stat({ icon: Icon, label, value }) {
+function Stat({ icon: Icon, label, value, tone }) {
   return (
-    <div className="stat">
-      <div className="stat-icon"><Icon size={18} /></div>
+    <div className={`stat tone-${tone}`}>
+      <div className="stat-icon"><Icon size={18} aria-hidden="true" /></div>
       <div>
         <div className="stat-value">{value}</div>
         <div className="stat-label">{label}</div>
@@ -380,7 +397,7 @@ function Stat({ icon: Icon, label, value }) {
 function RenameModal({ initial, onClose, onSave, busy }) {
   const [name, setName] = useState(initial);
   return (
-    <Modal title="Rename queue" onClose={onClose}>
+    <Modal title="Rename Queue" onClose={onClose}>
       <form
         className="stack"
         onSubmit={(e) => {
@@ -390,7 +407,7 @@ function RenameModal({ initial, onClose, onSave, busy }) {
       >
         <label className="field">
           <span>Queue name</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} />
+          <input name="queueName" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} autoComplete="off" />
         </label>
         <div className="row-end">
           <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>

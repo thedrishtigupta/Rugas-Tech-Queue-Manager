@@ -7,3 +7,5 @@ server/data/
 .env
 .DS_Store
 .playwright-mcp/
+.claude/
+skills-lock.json

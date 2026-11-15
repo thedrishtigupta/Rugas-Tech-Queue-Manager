@@ -115,7 +115,7 @@ export function seedDemo(db, { now = Date.now() } = {}) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const here = path.dirname(fileURLToPath(import.meta.url));
   const db = openDb(process.env.DB_FILE || path.join(here, '..', 'data', 'queue.db'));
-  if (process.argv.includes('--reset')) db.exec('DELETE FROM tokens; DELETE FROM queues; DELETE FROM users;');
+  if (process.argv.includes('--reset')) db.exec("DELETE FROM tokens; DELETE FROM queues; DELETE FROM users; DELETE FROM sqlite_sequence;");
   seedDemo(db);
   console.log('Seeded demo account -> username: demo  password: demo1234');
 }

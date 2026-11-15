@@ -26,7 +26,7 @@ export function Modal({ title, onClose, children, footer, width = 440 }) {
         <div className="modal-head">
           <h2>{title}</h2>
           <button className="icon-btn ghost" onClick={onClose} aria-label="Close">
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
         <div className="modal-body">{children}</div>
@@ -44,9 +44,10 @@ export function ConfirmDialog({ title, message, confirmLabel = 'Confirm', danger
       footer={
         <>
           <button className="btn btn-secondary" onClick={onClose} disabled={busy}>
-            Keep it
+            Keep It
           </button>
           <button className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`} onClick={onConfirm} disabled={busy}>
+            {busy && <span className="btn-spinner" aria-hidden="true" />}
             {busy ? 'Working…' : confirmLabel}
           </button>
         </>
